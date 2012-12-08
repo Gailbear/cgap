@@ -20,8 +20,8 @@
 #include "3600sendrecv.h"
 
 static int DATA_SIZE = 1460;
-static int TIMEOUT_SEC = 2;
-static int TIMEOUT_USEC = 0;
+static unsigned int TIMEOUT_SEC = 2;
+static unsigned int TIMEOUT_USEC = 0;
 
 unsigned int sequence = 0;
 

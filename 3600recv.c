@@ -67,7 +67,7 @@ int main() {
   t.tv_sec = 30;
   t.tv_usec = 0;
 
-  int last_seq_recv = -1;
+  unsigned int last_seq_recv = -1;
 
   // our receive buffer
   int buf_len = 1500;
