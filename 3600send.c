@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     }
     sequence ++;
     free(packet);
-    *packet = get_next_packet(sequence, &packet_len);
+    packet = get_next_packet(sequence, &packet_len);
   }
 
   send_final_packet(sock, out);
