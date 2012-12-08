@@ -61,12 +61,8 @@ void *get_next_packet(int sequence, int *len) {
   return packet;
 }
 
-int send_next_packet(int sock, struct sockaddr_in out) {
-  int packet_len = 0;
-  void *packet = get_next_packet(sequence, &packet_len);
-
-  if (packet == NULL) 
-    return 0;
+int send_packet(int sock, struct sockaddr_in out, void *packet, int packet_len) {
+  if (packet == NULL) return 0;
 
   mylog("[send data] %d (%d)\n", sequence, packet_len - sizeof(header));
 
@@ -101,6 +97,7 @@ int main(int argc, char *argv[]) {
    * get you started.
    */
 
+
   // extract the host IP and port
   if ((argc != 2) || (strstr(argv[1], ":") == NULL)) {
     usage();
@@ -130,10 +127,17 @@ int main(int argc, char *argv[]) {
 
   // construct the timeout
   struct timeval t;
-  t.tv_sec = 30;
+  t.tv_sec = 5;
   t.tv_usec = 0;
 
-  while (send_next_packet(sock, out)) {
+
+  int packet_len = 0;
+  void *packet = get_next_packet(sequence, &packet_len);
+
+  int timeout_count = 0;
+
+
+  while (send_packet(sock, out, packet, packet_len)) {
     int done = 0;
 
     while (! done) {
@@ -156,12 +160,25 @@ int main(int argc, char *argv[]) {
           mylog("[recv ack] %d\n", myheader->sequence);
           sequence = myheader->sequence;
           done = 1;
+          timeout_count = 0;
         } else {
           mylog("[recv corrupted ack] %x %d\n", MAGIC, sequence);
         }
       } else {
-        mylog("[error] timeout occurred\n");
+        timeout_count ++;
+        if(timeout_count < 3) {
+          send_packet(sock, out, packet, packet_len);
+          mylog("[timeout] occurred, resending\n");
+        }
+        else {
+          mylog("[error] timeout occured 3 times, lost connection");
+          // make sure the other size knows I'm quitting, if it's still there.
+          send_final_packet(sock,out);
+          exit(1);
+        }
       }
+      sequence ++;
+      *packet = get_next_packet(sequence, &packet_len);
     }
   }
 
