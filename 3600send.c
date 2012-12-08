@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
 
   // construct the timeout
   struct timeval t;
-  t.tv_sec = 5;
+  t.tv_sec = 2;
   t.tv_usec = 0;
 
 
@@ -168,18 +168,18 @@ int main(int argc, char *argv[]) {
       } else {
         timeout_count ++;
         if(timeout_count < 3) {
-          send_packet(sock, out, packet, packet_len);
           mylog("[timeout] occurred, resending\n");
+          send_packet(sock, out, packet, packet_len);
         }
         else {
-          mylog("[error] timeout occured 3 times, lost connection");
+          mylog("[error] timeout occured 3 times, lost connection\n");
           // make sure the other size knows I'm quitting, if it's still there.
           send_final_packet(sock,out);
           exit(1);
         }
       }
     }
-    sequence ++;
+    sequence += packet_len - sizeof(header);
     free(packet);
     packet = get_next_packet(sequence, &packet_len);
   }

@@ -91,7 +91,7 @@ int main() {
       if (myheader->magic == MAGIC) {
         write(1, data, myheader->length);
 
-        mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ACCEPTED (in-order)");
+        mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ACCEPTED");
         mylog("[send ack] %d\n", myheader->sequence + myheader->length);
 
         header *responseheader = make_header(myheader->sequence + myheader->length, 0, myheader->eof, 1);
