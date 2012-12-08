@@ -58,6 +58,7 @@ void *get_next_packet(int sequence, int *len) {
 
   *len = sizeof(header) + data_len;
 
+  mylog("[made packet] %d\n", sequence);
   return packet;
 }
 
@@ -177,9 +178,10 @@ int main(int argc, char *argv[]) {
           exit(1);
         }
       }
-      sequence ++;
-      *packet = get_next_packet(sequence, &packet_len);
     }
+    sequence ++;
+    free(packet);
+    *packet = get_next_packet(sequence, &packet_len);
   }
 
   send_final_packet(sock, out);
