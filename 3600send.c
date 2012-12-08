@@ -104,6 +104,7 @@ int main(int argc, char *argv[]) {
    * need to fill in many of the details, but this should be enough to
    * get you started.
    */
+  mylog("[start server] send\n");
 
 
   // extract the host IP and port

@@ -32,6 +32,8 @@ int main() {
    * get you started.
    */
 
+  mylog("[start server] recv\n");
+
   // first, open a UDP socket  
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
