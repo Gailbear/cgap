@@ -20,6 +20,8 @@
 #include "3600sendrecv.h"
 
 static int DATA_SIZE = 1460;
+static int TIMEOUT_SEC = 2;
+static int TIMEOUT_USEC = 0;
 
 unsigned int sequence = 0;
 
@@ -85,6 +87,11 @@ void send_final_packet(int sock, struct sockaddr_in out) {
   }
 }
 
+void set_timeout(struct timeval *t){
+  t->tv_sec = TIMEOUT_SEC;
+  t->tv_usec = TIMEOUT_USEC;
+}
+
 int main(int argc, char *argv[]) {
   /**
    * I've included some basic code for opening a UDP socket in C, 
@@ -127,9 +134,8 @@ int main(int argc, char *argv[]) {
   fd_set socks;
 
   // construct the timeout
-  struct timeval t;
-  t.tv_sec = 2;
-  t.tv_usec = 0;
+  struct timeval *t;
+  set_timeout(t);
 
 
   int packet_len = 0;
@@ -146,7 +152,7 @@ int main(int argc, char *argv[]) {
       FD_SET(sock, &socks);
 
       // wait to receive, or for a timeout
-      if (select(sock + 1, &socks, NULL, NULL, &t)) {
+      if (select(sock + 1, &socks, NULL, NULL, t)) {
         unsigned char buf[10000];
         int buf_len = sizeof(buf);
         int received;
@@ -170,6 +176,7 @@ int main(int argc, char *argv[]) {
         if(timeout_count < 3) {
           mylog("[timeout] occurred, resending\n");
           send_packet(sock, out, packet, packet_len);
+          set_timeout(t);
         }
         else {
           mylog("[error] timeout occured 3 times, lost connection\n");

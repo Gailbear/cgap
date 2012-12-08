@@ -67,6 +67,8 @@ int main() {
   t.tv_sec = 30;
   t.tv_usec = 0;
 
+  int last_seq_recv = -1;
+
   // our receive buffer
   int buf_len = 1500;
   void* buf = malloc(buf_len);
@@ -89,9 +91,15 @@ int main() {
       char *data = get_data(buf);
   
       if (myheader->magic == MAGIC) {
-        write(1, data, myheader->length);
 
-        mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ACCEPTED");
+        if(myheader->sequence == last_seq_recv){
+          mylog("[recv duplicate] %d\n", myheader->sequence);
+        }
+        else{
+          mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ACCEPTED");
+          write(1, data, myheader->length);
+          last_seq_recv = myheader->sequence;
+        }
         mylog("[send ack] %d\n", myheader->sequence + myheader->length);
 
         header *responseheader = make_header(myheader->sequence + myheader->length, 0, myheader->eof, 1);
