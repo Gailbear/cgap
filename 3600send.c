@@ -116,7 +116,6 @@ int get_next_packet(int sequence) {
   buffer_pointer += 1500;
   if(buffer_pointer > buffer + window_size * 1500) buffer_pointer = buffer;
 
-  dump_packet(buffer, 1500);
   dump_packet(packet, 1500);
   mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
 
@@ -207,6 +206,7 @@ int main(int argc, char *argv[]) {
 
   int bindex = get_next_packet(sequence);
   mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
+  dump_packet(get_packet_from_buffer(bindex), buffer_contents[bindex].length)
   
   int window = window_size;
 
