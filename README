@@ -1,1 +1,28 @@
-HEY LOOK A README.
+Cory and Gail's Awesome Protocol
+
+High level approach: We went with a dumbed down version of tcp. We have a fixed window size of 100. In general, we send ALL THE THINGS, and then we send acks for what we are missing, and we send them. Since our connection to ourselves is very secure, we just keep sending packets if there are a lot of packet drops in a row. When there's a timeout, we send the whole window again, because we assume there is congestion on the network.
+
+Problems: Almost everything, at one point or another, from typos to using memcpy wrong to timeing out too soon. However, we worked through it step by step, and have solved almost all the problems.
+
+Our design is good, because it works. Mostly.
+
+
+Obligatory ascii art:
++88_________________+880_______
+_+880_______________++80_______
+_++88______________+880________
+_++88_____________++88________
+__+880___________++88_________
+__+888_________++880__________
+__++880_______++880___________
+__++888_____+++880____________
+__++8888__+++8880++88_________
+__+++8888+++8880++8888________
+___++888++8888+++888888+80____
+___++88++8888++8888888++888___
+___++++++888888fx88888888888___
+____++++++88888888888888888___
+____++++++++000888888888888___
+_____+++++++00008f8888888888___
+______+++++++00088888888888___
+_______+++++++0888f8888888
