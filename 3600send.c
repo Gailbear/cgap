@@ -24,6 +24,50 @@ static unsigned int TIMEOUT_SEC = 2;
 static unsigned int TIMEOUT_USEC = 0;
 
 unsigned int sequence = 0;
+int window_size = 10;
+char* buffer;
+char* buffer_pointer;
+
+struct bufferdata {
+  int valid;
+  int sequence;
+  int length;
+  char *offset;
+};
+
+struct bufferdata *buffer_contents;
+
+int find_free_buffer_contents_index(){
+  for(int i = 0; i < window_size; i++){
+    if (buffer_contents[i].valid) continue;
+    return i;
+  }
+  return -1;
+}
+
+int find_packet_in_buffer(int sequence){
+  for(int i = 0; i < window_size; i++){
+    if(buffer_contents[i].valid){
+      if(buffer_contents[i].sequence == sequence) return i;
+    }
+  }
+  return -1;
+}
+
+void invalidate_less_than(int sequence){
+  for(int i = 0; i < window_size; i++){
+    if(buffer_contents[i].valid){
+      if(buffer_contents[i].sequence < sequence) buffer_contents[i].valid = 0;
+    }
+  }
+}
+
+
+void *get_packet_from_buffer(int bindex){
+  void *packet = malloc(buffer_contents[bindex].length);
+  memcpy(buffer_contents[bindex].offset, packet, buffer_contents[bindex].length);
+  return packet;
+}
 
 void usage() {
   printf("Usage: 3600send host:port\n");
@@ -41,13 +85,13 @@ int get_next_data(char *data, int size) {
  * Builds and returns the next packet, or NULL
  * if no more data is available.
  */
-void *get_next_packet(int sequence, int *len) {
+int get_next_packet(int sequence) {
   char *data = malloc(DATA_SIZE);
   int data_len = get_next_data(data, DATA_SIZE);
 
   if (data_len == 0) {
     free(data);
-    return NULL;
+    return (long) NULL;
   }
 
   header *myheader = make_header(sequence, data_len, 0, 0);
@@ -58,10 +102,23 @@ void *get_next_packet(int sequence, int *len) {
   free(data);
   free(myheader);
 
-  *len = sizeof(header) + data_len;
+  int len = sizeof(header) + data_len;
+
+  int bindex = find_free_buffer_contents_index();
+  if (bindex < 0) exit(1); // CRASH!
+  buffer_contents[bindex].length = len;
+  buffer_contents[bindex].sequence = sequence;
+  buffer_contents[bindex].offset = buffer_pointer;
+  buffer_contents[bindex].valid = 1;
+
+  memcpy(buffer_pointer, packet, len);
+  buffer_pointer += 1500;
+  if(buffer_pointer > buffer + window_size * 1500) buffer_pointer = buffer;
+
+  free(packet);
 
   mylog("[made packet] %d\n", sequence);
-  return packet;
+  return bindex;
 }
 
 int send_packet(int sock, struct sockaddr_in out, void *packet, int packet_len) {
@@ -106,6 +163,11 @@ int main(int argc, char *argv[]) {
    */
   mylog("[start server] send\n");
 
+  
+  buffer = (char *) malloc(window_size * 1500);
+  buffer_pointer = buffer;
+  buffer_contents = (struct bufferdata *) calloc(window_size, sizeof(struct bufferdata));
+
 
   // extract the host IP and port
   if ((argc != 2) || (strstr(argv[1], ":") == NULL)) {
@@ -138,17 +200,16 @@ int main(int argc, char *argv[]) {
   struct timeval *t = (struct timeval *) malloc(sizeof(struct timeval));
   set_timeout(t);
 
-
-  int packet_len = 0;
-  void *packet = get_next_packet(sequence, &packet_len);
+  int bindex = get_next_packet(sequence);
+  int window = window_size;
 
   int timeout_count = 0;
 
 
-  while (send_packet(sock, out, packet, packet_len)) {
-    int done = 0;
+  while (send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)) {
+    window --;
 
-    while (! done) {
+    while (window > 0) {
       FD_ZERO(&socks);
       FD_SET(sock, &socks);
 
@@ -167,7 +228,11 @@ int main(int argc, char *argv[]) {
         if ((myheader->magic == MAGIC) && (myheader->sequence >= sequence) && (myheader->ack == 1)) {
           mylog("[recv ack] %d\n", myheader->sequence);
           sequence = myheader->sequence;
-          done = 1;
+          bindex = find_packet_in_buffer(sequence);
+          if(bindex < 0){
+            bindex = get_next_packet(sequence);
+            window ++;
+          }
           timeout_count = 0;
         } else {
           mylog("[recv corrupted ack] %x %d\n", MAGIC, sequence);
@@ -176,7 +241,7 @@ int main(int argc, char *argv[]) {
         timeout_count ++;
         if(timeout_count < 3) {
           mylog("[timeout] occurred, resending\n");
-          send_packet(sock, out, packet, packet_len);
+          send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length);
           set_timeout(t);
         }
         else {
@@ -187,9 +252,6 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-    sequence += packet_len - sizeof(header);
-    free(packet);
-    packet = get_next_packet(sequence, &packet_len);
   }
 
   send_final_packet(sock, out);

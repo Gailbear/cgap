@@ -3,3 +3,4 @@
 3600sendrecv.o
 *.dSYM/
 log.txt
+*.swp
