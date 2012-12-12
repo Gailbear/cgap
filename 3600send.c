@@ -209,16 +209,17 @@ int main(int argc, char *argv[]) {
   int timeout_count = 0;
 
   int received_eof = 0; 
+  int sent_eof = 0;
 
   while (!received_eof){
     send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length);
     window --;
-    while(window > 0){
+    while(window > 0 && !sent_eof){
       sequence += buffer_contents[bindex].length - sizeof(header);
       bindex = get_next_packet(sequence);
       if(!send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)){
         send_final_packet(sock, out);
-        break;
+        sent_eof = 1;
       }
       window --;
     }
@@ -247,7 +248,7 @@ int main(int argc, char *argv[]) {
         if ((myheader->magic == MAGIC) && (myheader->ack == 1)) {
           mylog("[recv ack] %d\n", myheader->sequence);
           sequence = myheader->sequence;
-	  invalidate_less_than(sequence);
+          invalidate_less_than(sequence);
           bindex = find_packet_in_buffer(sequence);
           if(bindex < 0){
             bindex = get_next_packet(sequence);
