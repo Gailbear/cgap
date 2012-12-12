@@ -160,7 +160,7 @@ int main() {
 
         if(myheader->sequence == last_seq_recv){
           mylog("[recv duplicate] %d\n", myheader->sequence);
-        } else if(myheader->sequence == last_seq_recv + last_seq_length || last_seq_recv == (unsigned int)(-1) ) {
+        } else if(myheader->sequence == last_seq_recv + last_seq_length || (myheader->sequence == 0 && last_seq_recv == (unsigned int)(-1)) ) {
           mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ACCEPTED");
           write(1, data, myheader->length);
           last_seq_recv = myheader->sequence;

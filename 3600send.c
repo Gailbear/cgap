@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     while(window > 0){
       sequence += DATA_SIZE;
       bindex = get_next_packet(sequence);
-      send_packet(sock, out, get_packed_from_buffer(bindex), buffer_contents[bindex].length);
+      send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length);
       window --;
     }
 
