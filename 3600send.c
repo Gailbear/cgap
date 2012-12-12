@@ -118,6 +118,7 @@ int get_next_packet(int sequence) {
 
   dump_packet(buffer, 1500);
   dump_packet(packet, 1500);
+  mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
 
   free(packet);
 
