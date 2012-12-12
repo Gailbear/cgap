@@ -210,8 +210,9 @@ int main(int argc, char *argv[]) {
 
   while (send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)) {
     window --;
+    int done = 0;
 
-    while (window > 0) {
+    while (!done && window > 0) {
       FD_ZERO(&socks);
       FD_SET(sock, &socks);
 
@@ -235,6 +236,7 @@ int main(int argc, char *argv[]) {
             bindex = get_next_packet(sequence);
             window ++;
           }
+          done = 1;
           timeout_count = 0;
         } else {
           mylog("[recv corrupted ack] %x %d\n", MAGIC, sequence);
