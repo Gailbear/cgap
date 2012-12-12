@@ -2,3 +2,4 @@
 3600send
 3600sendrecv.o
 *.dSYM/
+log.txt

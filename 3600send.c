@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
   fd_set socks;
 
   // construct the timeout
-  struct timeval *t;
+  struct timeval *t = (struct timeval *) malloc(sizeof(struct timeval));
   set_timeout(t);
 
 
