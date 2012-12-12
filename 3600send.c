@@ -64,6 +64,7 @@ void invalidate_less_than(int sequence){
 
 
 void *get_packet_from_buffer(int bindex){
+  if (bindex < 0) return NULL;
   void *packet = calloc(buffer_contents[bindex].length, 1);
   memcpy(packet, buffer_contents[bindex].offset, buffer_contents[bindex].length);
   return packet;
@@ -91,7 +92,7 @@ int get_next_packet(int sequence) {
 
   if (data_len == 0) {
     free(data);
-    return (long) NULL;
+    return -1;
   }
 
   header *myheader = make_header(sequence, data_len, 0, 0);
