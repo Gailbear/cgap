@@ -21,6 +21,7 @@ unsigned int MAGIC;
 void dump_packet(unsigned char *data, int size);
 header *make_header(int sequence, int length, int eof, int ack);
 header *get_header(void *data);
+header *get_header_again(void *data);
 char *get_data(void *data);
 char *timestamp();
 void mylog(char *fmt, ...);

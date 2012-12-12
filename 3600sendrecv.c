@@ -78,6 +78,17 @@ header *get_header(void *data) {
   return h;
 }
 
+
+/**
+ * This function takes a returned packet and returns a header pointer.  It
+ * does not allocate any new memory, so no free is needed. It assumes get_header
+ * has already been called.
+ */
+header *get_header_again(void *data) {
+  header *h = (header *) data;
+  return h;
+}
+
 /**
  * This function takes a returned packet and returns a pointer to the data.  It
  * does not allocate any new memory, so no free is needed.

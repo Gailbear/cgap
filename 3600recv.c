@@ -19,6 +19,72 @@
 
 #include "3600sendrecv.h"
 
+unsigned int WINDOW_SIZE = 10;
+unsigned int last_seq_recv = -1;
+unsigned int last_seq_length = 0;
+unsigned int last_seq_eof = 0;
+int buf_len = 1500;
+char *window;
+
+
+void output_packets()
+{
+  unsigned int i = 0;
+  for(i = 0; i < WINDOW_SIZE; i++)
+  {
+    void *buffer = (void *)(window + (i*buf_len));
+    header *myheader = get_header_again(buffer);
+    char *data = get_data(buffer);
+
+    //This is an empty slot in the window
+    if(myheader->magic != MAGIC) continue;
+
+    if(myheader->sequence == last_seq_recv + last_seq_length)
+    {
+      //Found the next packet in memory!
+      mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "PULLED FROM WINDOW");
+
+      //Send it out!
+      last_seq_recv = myheader->sequence;
+      last_seq_length = myheader->length;
+      last_seq_eof = myheader->eof;
+      write(1, data, myheader->length);
+
+      //Fill with zeros!
+      memset(buffer, 0, buf_len);
+
+      //Keep looking for the next one!
+      i = 0;
+    }
+  }
+}
+
+void add_window(void *buffer)
+{
+  unsigned int i = 0;
+  header *newheader = get_header_again(buffer);
+  for(i = 0; i < WINDOW_SIZE; i++)
+  {
+    header *myheader = get_header_again((void *)(window + (i*buf_len)));
+    if(myheader->magic != MAGIC) break;
+    if(newheader->magic == MAGIC && myheader->sequence == newheader->sequence)
+    {
+        mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ALREADY IN WINDOW");
+        break;
+    }
+  }
+
+  //Full window?
+  if(i == WINDOW_SIZE)
+  {
+    mylog("pie");
+    exit(1);
+  }
+
+  //add to the window
+  memcpy(window + (i*buf_len), buffer, buf_len);
+}
+
 int main() {
   /**
    * I've included some basic code for opening a UDP socket in C, 
@@ -33,6 +99,7 @@ int main() {
    */
 
   mylog("[start server] recv\n");
+  window = calloc(WINDOW_SIZE, buf_len);
 
   // first, open a UDP socket  
   int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -69,10 +136,7 @@ int main() {
   t.tv_sec = 30;
   t.tv_usec = 0;
 
-  unsigned int last_seq_recv = -1;
-
   // our receive buffer
-  int buf_len = 1500;
   void* buf = malloc(buf_len);
 
   // wait to receive, or for a timeout
@@ -87,7 +151,7 @@ int main() {
         exit(1);
       }
 
-//      dump_packet(buf, received);
+      dump_packet(buf, received);
 
       header *myheader = get_header(buf);
       char *data = get_data(buf);
@@ -96,21 +160,28 @@ int main() {
 
         if(myheader->sequence == last_seq_recv){
           mylog("[recv duplicate] %d\n", myheader->sequence);
-        }
-        else{
+        } else if(myheader->sequence == last_seq_recv + last_seq_length || last_seq_recv == (unsigned int)(-1) ) {
           mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ACCEPTED");
           write(1, data, myheader->length);
           last_seq_recv = myheader->sequence;
+          last_seq_length = myheader->length;
+          last_seq_eof = myheader->eof;
+          output_packets();
+        } else {
+          mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ADDED TO WINDOW");
+          add_window(buf);
+          output_packets();
         }
-        mylog("[send ack] %d\n", myheader->sequence + myheader->length);
+        mylog("[send ack] %d\n", last_seq_recv + last_seq_length);
 
-        header *responseheader = make_header(myheader->sequence + myheader->length, 0, myheader->eof, 1);
+        header *responseheader = make_header(last_seq_recv + last_seq_length, 0, last_seq_eof, 1);
         if (sendto(sock, responseheader, sizeof(header), 0, (struct sockaddr *) &in, (socklen_t) sizeof(in)) < 0) {
           perror("sendto");
           exit(1);
         }
 
         if (myheader->eof) {
+          output_packets();
           mylog("[recv eof]\n");
           mylog("[completed]\n");
           exit(0);
