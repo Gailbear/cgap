@@ -137,7 +137,7 @@ int send_packet(int sock, struct sockaddr_in out, void *packet, int packet_len) 
 }
 
 void send_final_packet(int sock, struct sockaddr_in out) {
-  header *myheader = make_header(sequence+1, 0, 1, 0);
+  header *myheader = make_header(sequence, 0, 1, 0);
   mylog("[send eof]\n");
 
   if (sendto(sock, myheader, sizeof(header), 0, (struct sockaddr *) &out, (socklen_t) sizeof(out)) < 0) {
