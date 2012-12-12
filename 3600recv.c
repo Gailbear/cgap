@@ -19,7 +19,7 @@
 
 #include "3600sendrecv.h"
 
-unsigned int WINDOW_SIZE = 10;
+unsigned int WINDOW_SIZE = 100;
 unsigned int last_seq_recv = -1;
 unsigned int last_seq_length = 0;
 unsigned int last_seq_eof = 0;
@@ -151,7 +151,7 @@ int main() {
         exit(1);
       }
 
-      dump_packet(buf, received);
+      //dump_packet(buf, received);
 
       header *myheader = get_header(buf);
       char *data = get_data(buf);

@@ -24,7 +24,7 @@ static unsigned int TIMEOUT_SEC = 2;
 static unsigned int TIMEOUT_USEC = 0;
 
 unsigned int sequence = 0;
-int window_size = 10;
+int window_size = 100;
 unsigned char* buffer;
 unsigned char* buffer_pointer;
 
@@ -212,9 +212,9 @@ int main(int argc, char *argv[]) {
   while (send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)) {
     window --;
     int done = 0;
-    mylog("[window] size: %d\n", window);
 
-    while (!done && window > 0) {
+
+    while (window > 0) {
       FD_ZERO(&socks);
       FD_SET(sock, &socks);
 
@@ -233,6 +233,7 @@ int main(int argc, char *argv[]) {
         if ((myheader->magic == MAGIC) && (myheader->sequence >= sequence) && (myheader->ack == 1)) {
           mylog("[recv ack] %d\n", myheader->sequence);
           sequence = myheader->sequence;
+	  invalidate_less_than(sequence);
           bindex = find_packet_in_buffer(sequence);
           if(bindex < 0){
             bindex = get_next_packet(sequence);
