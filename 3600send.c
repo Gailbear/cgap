@@ -111,7 +111,7 @@ int get_next_packet(int sequence) {
   buffer_contents[bindex].sequence = sequence;
   buffer_contents[bindex].offset = buffer_pointer;
   buffer_contents[bindex].valid = 1;
-  mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset);
+  mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
 
   memcpy(buffer_pointer, packet, len);
   buffer_pointer += 1500;
