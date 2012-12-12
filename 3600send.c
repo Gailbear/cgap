@@ -211,10 +211,17 @@ int main(int argc, char *argv[]) {
 
   while (send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)) {
     window --;
+    while(window > 0){
+      sequence += DATA_SIZE;
+      bindex = get_next_packet(sequence);
+      send_packet(sock, out, get_packed_from_buffer(bindex), buffer_contents[bindex].length);
+      window --;
+    }
+
     int done = 0;
 
 
-    while (window > 0) {
+    while (!done) {
       FD_ZERO(&socks);
       FD_SET(sock, &socks);
 
