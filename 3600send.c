@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
   while (send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)) {
     window --;
     while(window > 0){
-      sequence += DATA_SIZE;
+      sequence += buffer_contents[bindex].length - sizeof(header);
       bindex = get_next_packet(sequence);
       send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length);
       window --;
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
 
         header *myheader = get_header(buf);
 
-        if ((myheader->magic == MAGIC) && (myheader->sequence >= sequence) && (myheader->ack == 1)) {
+        if ((myheader->magic == MAGIC) && (myheader->ack == 1)) {
           mylog("[recv ack] %d\n", myheader->sequence);
           sequence = myheader->sequence;
 	  invalidate_less_than(sequence);
