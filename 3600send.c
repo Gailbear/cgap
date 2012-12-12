@@ -256,7 +256,10 @@ int main(int argc, char *argv[]) {
         timeout_count ++;
 //        if(timeout_count < 10) {
           mylog("[timeout] occurred, resending\n");
-          send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length);
+          for(int i = 0; i < window_size; i++){
+            if(buffer_contents[i].valid)
+              send_packet(sock, out, get_packet_from_buffer(i), buffer_contents[i].length);
+          }
           set_timeout(t);
  //       }
   /*      else {
