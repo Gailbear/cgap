@@ -110,14 +110,11 @@ int get_next_packet(int sequence) {
   buffer_contents[bindex].sequence = sequence;
   buffer_contents[bindex].offset = buffer_pointer;
   buffer_contents[bindex].valid = 1;
-  mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
 
   memcpy(buffer_pointer, packet, len);
   buffer_pointer += 1500;
   if(buffer_pointer > buffer + window_size * 1500) buffer_pointer = buffer;
 
-  dump_packet(packet, 1500);
-  mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
 
   free(packet);
 
@@ -205,8 +202,6 @@ int main(int argc, char *argv[]) {
   set_timeout(t);
 
   int bindex = get_next_packet(sequence);
-  mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
-  dump_packet(get_packet_from_buffer(bindex), buffer_contents[bindex].length);
   
   int window = window_size;
 
