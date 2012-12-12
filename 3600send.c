@@ -64,7 +64,7 @@ void invalidate_less_than(int sequence){
 
 
 void *get_packet_from_buffer(int bindex){
-  void *packet = malloc(buffer_contents[bindex].length);
+  void *packet = calloc(buffer_contents[bindex].length, 1);
   memcpy(buffer_contents[bindex].offset, packet, buffer_contents[bindex].length);
   dump_packet(packet, buffer_contents[bindex].length);
   return packet;
