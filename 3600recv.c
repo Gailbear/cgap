@@ -21,7 +21,7 @@
 
 unsigned int WINDOW_SIZE = 100;
 unsigned int last_seq_recv = -1;
-unsigned int last_seq_length = 0;
+unsigned int last_seq_length = 1;
 unsigned int last_seq_eof = 0;
 int buf_len = 1500;
 char *window;
@@ -167,7 +167,7 @@ int main() {
           last_seq_length = myheader->length;
           last_seq_eof = myheader->eof;
           output_packets();
-        } else {
+        } else if(myheader->sequence > last_seq_recv + last_seq_length) {
           mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ADDED TO WINDOW");
           add_window(buf);
           output_packets();

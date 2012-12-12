@@ -254,17 +254,17 @@ int main(int argc, char *argv[]) {
         }
       } else {
         timeout_count ++;
-        if(timeout_count < 3) {
+//        if(timeout_count < 10) {
           mylog("[timeout] occurred, resending\n");
           send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length);
           set_timeout(t);
-        }
-        else {
-          mylog("[error] timeout occured 3 times, lost connection\n");
+ //       }
+  /*      else {
+          mylog("[error] timeout occured 10 times, lost connection\n");
           // make sure the other size knows I'm quitting, if it's still there.
           send_final_packet(sock,out);
           exit(1);
-        }
+        }*/
       }
     }
   }
