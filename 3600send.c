@@ -66,7 +66,6 @@ void invalidate_less_than(int sequence){
 void *get_packet_from_buffer(int bindex){
   void *packet = calloc(buffer_contents[bindex].length, 1);
   memcpy(buffer_contents[bindex].offset, packet, buffer_contents[bindex].length);
-  dump_packet(packet, buffer_contents[bindex].length);
   return packet;
 }
 
@@ -116,6 +115,9 @@ int get_next_packet(int sequence) {
   memcpy(buffer_pointer, packet, len);
   buffer_pointer += 1500;
   if(buffer_pointer > buffer + window_size * 1500) buffer_pointer = buffer;
+
+  dump_packet(buffer, 1500);
+  dump_packet(packet, 1500);
 
   free(packet);
 
