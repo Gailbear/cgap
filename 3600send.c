@@ -25,14 +25,14 @@ static unsigned int TIMEOUT_USEC = 0;
 
 unsigned int sequence = 0;
 int window_size = 10;
-char* buffer;
-char* buffer_pointer;
+unsigned char* buffer;
+unsigned char* buffer_pointer;
 
 struct bufferdata {
   int valid;
   int sequence;
   int length;
-  char *offset;
+  unsigned char *offset;
 };
 
 struct bufferdata *buffer_contents;
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   mylog("[start server] send\n");
 
   
-  buffer = (char *) malloc(window_size * 1500);
+  buffer = (unsigned char *) malloc(window_size * 1500);
   buffer_pointer = buffer;
   buffer_contents = (struct bufferdata *) calloc(window_size, sizeof(struct bufferdata));
 
