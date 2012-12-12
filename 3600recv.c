@@ -27,6 +27,7 @@ int buf_len = 1500;
 char *window;
 
 
+//Look through the window, checking if we can fill in the blanks
 void output_packets()
 {
   unsigned int i = 0;
@@ -59,6 +60,7 @@ void output_packets()
   }
 }
 
+//Add a packet to the window if not in correct order
 void add_window(void *buffer)
 {
   unsigned int i = 0;
@@ -159,8 +161,10 @@ int main() {
       if (myheader->magic == MAGIC) {
 
         if(myheader->sequence == last_seq_recv){
+          //Duplicate packet received
           mylog("[recv duplicate] %d\n", myheader->sequence);
         } else if(myheader->sequence == last_seq_recv + last_seq_length || (myheader->sequence == 0 && last_seq_recv == (unsigned int)(-1)) ) {
+          //Correct packet received
           mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ACCEPTED");
           write(1, data, myheader->length);
           last_seq_recv = myheader->sequence;
@@ -168,10 +172,19 @@ int main() {
           last_seq_eof = myheader->eof;
           output_packets();
         } else if(myheader->sequence > last_seq_recv + last_seq_length) {
+          //Packet received too early. Put it in the window.
           mylog("[recv data] %d (%d) %s\n", myheader->sequence, myheader->length, "ADDED TO WINDOW");
           add_window(buf);
           output_packets();
         }
+
+        if(myheader->eof)
+        {
+          //Received an EOF packet
+          mylog("[recv eof initial] %d (%d) EOF:%d\n", myheader->sequence, myheader->length, myheader->eof);
+        }
+
+        //Ask for the next packet
         mylog("[send ack] %d\n", last_seq_recv + last_seq_length);
 
         header *responseheader = make_header(last_seq_recv + last_seq_length, 0, last_seq_eof, 1);
@@ -180,8 +193,10 @@ int main() {
           exit(1);
         }
 
-        if (myheader->eof) {
+        if (last_seq_eof) {
+          //Received an EOF packet AND have all the info
           output_packets();
+          mylog("[recv eof] %d (%d) EOF:%d\n", last_seq_recv, last_seq_length, last_seq_eof);
           mylog("[recv eof]\n");
           mylog("[completed]\n");
           exit(0);

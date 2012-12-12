@@ -19,15 +19,18 @@
 
 #include "3600sendrecv.h"
 
+//max buffer size, timeout duration
 static int DATA_SIZE = 1460;
 static unsigned int TIMEOUT_SEC = 2;
 static unsigned int TIMEOUT_USEC = 0;
 
+//Starting sequence, window size, buffer
 unsigned int sequence = 0;
 int window_size = 100;
 unsigned char* buffer;
 unsigned char* buffer_pointer;
 
+//Data structure to be stored in the window
 struct bufferdata {
   int valid;
   int sequence;
@@ -37,6 +40,7 @@ struct bufferdata {
 
 struct bufferdata *buffer_contents;
 
+//returns first free index in window
 int find_free_buffer_contents_index(){
   for(int i = 0; i < window_size; i++){
     if (buffer_contents[i].valid) continue;
@@ -45,6 +49,7 @@ int find_free_buffer_contents_index(){
   return -1;
 }
 
+//Given a sequence, return packet index in window
 int find_packet_in_buffer(int sequence){
   for(int i = 0; i < window_size; i++){
     if(buffer_contents[i].valid){
@@ -54,6 +59,7 @@ int find_packet_in_buffer(int sequence){
   return -1;
 }
 
+//Invalidate all packets in window with a lesser sequence number
 void invalidate_less_than(int sequence){
   for(int i = 0; i < window_size; i++){
     if(buffer_contents[i].valid){
@@ -62,7 +68,7 @@ void invalidate_less_than(int sequence){
   }
 }
 
-
+//Get packet at index in window
 void *get_packet_from_buffer(int bindex){
   if (bindex < 0) return NULL;
   void *packet = calloc(buffer_contents[bindex].length, 1);
@@ -70,6 +76,7 @@ void *get_packet_from_buffer(int bindex){
   return packet;
 }
 
+//Print usage message
 void usage() {
   printf("Usage: 3600send host:port\n");
   exit(1);
@@ -123,6 +130,7 @@ int get_next_packet(int sequence) {
   return bindex;
 }
 
+//Send a given packet
 int send_packet(int sock, struct sockaddr_in out, void *packet, int packet_len) {
   if (packet == NULL) return 0;
 
@@ -136,6 +144,7 @@ int send_packet(int sock, struct sockaddr_in out, void *packet, int packet_len) 
   return 1;
 }
 
+//Send a packet with an EOF signal
 void send_final_packet(int sock, struct sockaddr_in out) {
   header *myheader = make_header(sequence, 0, 1, 0);
   mylog("[send eof]\n");
@@ -146,6 +155,7 @@ void send_final_packet(int sock, struct sockaddr_in out) {
   }
 }
 
+//Set the maximum timeout
 void set_timeout(struct timeval *t){
   t->tv_sec = TIMEOUT_SEC;
   t->tv_usec = TIMEOUT_USEC;
@@ -165,7 +175,8 @@ int main(int argc, char *argv[]) {
    */
   mylog("[start server] send\n");
 
-  
+
+  //Initialize the window to given size  
   buffer = (unsigned char *) malloc(window_size * 1500);
   buffer_pointer = buffer;
   buffer_contents = (struct bufferdata *) calloc(window_size, sizeof(struct bufferdata));
@@ -209,17 +220,17 @@ int main(int argc, char *argv[]) {
   int timeout_count = 0;
 
   int received_eof = 0; 
-  int sent_eof = 0;
 
+  //Until the receiving client confirms they have received all info, keep going
   while (!received_eof){
     send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length);
     window --;
-    while(window > 0 && !sent_eof){
+    while(window > 0){
       sequence += buffer_contents[bindex].length - sizeof(header);
       bindex = get_next_packet(sequence);
       if(!send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)){
         send_final_packet(sock, out);
-        sent_eof = 1;
+        break;
       }
       window --;
     }
@@ -248,7 +259,7 @@ int main(int argc, char *argv[]) {
         if ((myheader->magic == MAGIC) && (myheader->ack == 1)) {
           mylog("[recv ack] %d\n", myheader->sequence);
           sequence = myheader->sequence;
-          invalidate_less_than(sequence);
+	  invalidate_less_than(sequence);
           bindex = find_packet_in_buffer(sequence);
           if(bindex < 0){
             bindex = get_next_packet(sequence);
