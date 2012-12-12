@@ -206,6 +206,8 @@ int main(int argc, char *argv[]) {
   set_timeout(t);
 
   int bindex = get_next_packet(sequence);
+  mylog("[debug] buffer offset: %d\n", buffer_contents[bindex].offset - buffer);
+  
   int window = window_size;
 
   int timeout_count = 0;
