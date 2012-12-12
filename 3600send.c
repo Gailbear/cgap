@@ -212,6 +212,7 @@ int main(int argc, char *argv[]) {
   while (send_packet(sock, out, get_packet_from_buffer(bindex), buffer_contents[bindex].length)) {
     window --;
     int done = 0;
+    mylog("[window] size: %d\n", window);
 
     while (!done && window > 0) {
       FD_ZERO(&socks);
@@ -237,6 +238,7 @@ int main(int argc, char *argv[]) {
             bindex = get_next_packet(sequence);
             window ++;
           }
+          mylog("[window] size: %d\n", window);
           done = 1;
           timeout_count = 0;
         } else {
